@@ -18,6 +18,7 @@ class ModelStatusResponse(BaseModel):
     best_recorded_reward: Optional[float] = None
     session_status: str
     current_fps: int = 30
+    message: Optional[str] = None
 
 
 class SessionControlRequest(BaseModel):

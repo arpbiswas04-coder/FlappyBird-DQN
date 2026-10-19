@@ -25,6 +25,7 @@ if PROJECT_ROOT not in sys.path:
 
 from dqn import DQN
 from webapp.schemas import EpisodeRecord, ModelStatusResponse, MetricsHistoryResponse
+from webapp.model_loader import download_model_checkpoint
 
 
 class AgentDemonstrationService:
@@ -36,6 +37,7 @@ class AgentDemonstrationService:
         self.device = self._detect_device()
         self.model: Optional[DQN] = None
         self.model_loaded = False
+        self.model_error: Optional[str] = None
         self.state_dim = 180
         self.action_dim = 2
         self.best_recorded_reward: Optional[float] = None
@@ -112,12 +114,27 @@ class AgentDemonstrationService:
             print(f"Could not render initial frame: {e}")
 
     def load_model(self) -> bool:
-        """Load the PyTorch DQN model checkpoint safely using weights_only=True."""
+        """
+        Load the PyTorch DQN model checkpoint safely using weights_only=True.
+        If the checkpoint is missing locally and MODEL_URL is set, downloads it first.
+        """
         try:
             if not os.path.exists(self.model_path):
-                self._status = "error"
-                print(f"Model file not found at {self.model_path}")
-                return False
+                model_url = os.environ.get("MODEL_URL")
+                if model_url and model_url.strip():
+                    success, msg = download_model_checkpoint(self.model_path, model_url=model_url)
+                    if not success:
+                        self.model_loaded = False
+                        self._status = "error"
+                        self.model_error = f"Model not loaded: {msg}"
+                        print(f"Warning: {self.model_error}")
+                        return False
+                else:
+                    self.model_loaded = False
+                    self._status = "error"
+                    self.model_error = f"Model not loaded: Checkpoint not found at {self.model_path} and MODEL_URL is not configured."
+                    print(self.model_error)
+                    return False
 
             model = DQN(state_dim=self.state_dim, action_dim=self.action_dim, hidden_dim=256)
             
@@ -129,16 +146,19 @@ class AgentDemonstrationService:
             
             self.model = model
             self.model_loaded = True
+            self.model_error = None
             self._status = "ready"
             return True
         except Exception as e:
             self.model_loaded = False
             self._status = "error"
+            self.model_error = f"Model not loaded: Failed to load checkpoint: {e}"
             print(f"Failed to load checkpoint: {e}")
             return False
 
     def get_status(self) -> ModelStatusResponse:
         """Return the current model status and server state."""
+        message = "Model checkpoint loaded successfully." if self.model_loaded else (self.model_error or "Model checkpoint not loaded.")
         return ModelStatusResponse(
             model_loaded=self.model_loaded,
             checkpoint_path=os.path.basename(self.model_path),
@@ -150,6 +170,7 @@ class AgentDemonstrationService:
             best_recorded_reward=self.best_recorded_reward,
             session_status=self._status,
             current_fps=self.target_fps,
+            message=message,
         )
 
     def get_metrics_history(self) -> MetricsHistoryResponse:
@@ -203,7 +224,9 @@ class AgentDemonstrationService:
         """Start or resume the demonstration session."""
         with self._status_lock:
             if not self.model_loaded:
-                return {"success": False, "status": self._status, "message": "Model not loaded. Checkpoint missing or incompatible."}
+                self.load_model()
+            if not self.model_loaded:
+                return {"success": False, "status": self._status, "message": self.model_error or "Model not loaded. Checkpoint missing or incompatible."}
             
             if self._status == "paused":
                 self.target_fps = fps

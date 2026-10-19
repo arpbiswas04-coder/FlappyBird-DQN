@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from unittest.mock import patch, MagicMock
 import numpy as np
 import torch
 from fastapi.testclient import TestClient
@@ -10,7 +11,8 @@ PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from webapp.main import app, agent_service
+from webapp.main import app, agent_service, FRONTEND_DIST
+from webapp.model_loader import download_model_checkpoint
 from dqn import DQN
 
 
@@ -167,6 +169,117 @@ class TestBackend(unittest.TestCase):
         hist_data = hist_res.json()
         self.assertEqual(len(hist_data["episodes"]), 0)
         self.assertIsNone(hist_data["best_reward"])
+
+    def test_10_model_download_missing_url(self):
+        """Verify download_model_checkpoint fails gracefully when MODEL_URL is missing."""
+        test_path = os.path.join(PROJECT_ROOT, "runs", "test_missing_model.pt")
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+        with patch.dict(os.environ, {}, clear=True):
+            success, msg = download_model_checkpoint(test_path, model_url=None)
+            self.assertFalse(success)
+            self.assertIn("MODEL_URL environment variable is not configured", msg)
+            self.assertFalse(os.path.exists(test_path))
+
+    def test_11_model_download_success(self):
+        """Verify safe download writes to temporary file and atomically installs checkpoint."""
+        test_path = os.path.join(PROJECT_ROOT, "runs", "test_download_model.pt")
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+        fake_checkpoint_bytes = b"FLAPPY_DQN_MOCK_CHECKPOINT_DATA" * 50  # > 1024 bytes
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.read.side_effect = [fake_checkpoint_bytes, b""]
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            success, msg = download_model_checkpoint(
+                test_path,
+                model_url="https://example.com/models/flappybirdv0.pt",
+                min_size_bytes=100
+            )
+            self.assertTrue(success)
+            self.assertIn("Successfully downloaded", msg)
+            self.assertTrue(os.path.exists(test_path))
+            with open(test_path, "rb") as f:
+                content = f.read()
+            self.assertEqual(content, fake_checkpoint_bytes)
+
+        # Cleanup
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+    def test_12_model_download_empty_or_small_file_rejected(self):
+        """Verify empty or undersized downloads are rejected and leave no partial files."""
+        test_path = os.path.join(PROJECT_ROOT, "runs", "test_empty_model.pt")
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.read.side_effect = [b"short", b""]
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            success, msg = download_model_checkpoint(
+                test_path,
+                model_url="https://example.com/models/empty.pt",
+                min_size_bytes=1024
+            )
+            self.assertFalse(success)
+            self.assertIn("too small", msg)
+            self.assertFalse(os.path.exists(test_path))
+
+    def test_13_model_download_network_error_cleans_up(self):
+        """Verify network exceptions are caught cleanly and no partial files are left."""
+        import urllib.error
+        test_path = os.path.join(PROJECT_ROOT, "runs", "test_network_fail.pt")
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+        with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("Connection refused")):
+            success, msg = download_model_checkpoint(
+                test_path,
+                model_url="https://example.com/unreachable/model.pt"
+            )
+            self.assertFalse(success)
+            self.assertIn("Failed to download model checkpoint", msg)
+            self.assertFalse(os.path.exists(test_path))
+
+    def test_14_production_spa_fallback_and_static_assets(self):
+        """Verify root and SPA routes serve index.html, while static assets return directly."""
+        # 1. Root route
+        res_root = self.client.get("/")
+        self.assertEqual(res_root.status_code, 200)
+        self.assertIn("text/html", res_root.headers.get("content-type", ""))
+        self.assertIn("Flappy Bird AI", res_root.text)
+
+        # 2. Client-side SPA navigation route (e.g. /dashboard or /analytics)
+        res_spa = self.client.get("/dashboard")
+        self.assertEqual(res_spa.status_code, 200)
+        self.assertIn("text/html", res_spa.headers.get("content-type", ""))
+        self.assertIn("Flappy Bird AI", res_spa.text)
+
+        # 3. Static assets if dist exists
+        if os.path.exists(FRONTEND_DIST):
+            assets_dir = os.path.join(FRONTEND_DIST, "assets")
+            if os.path.exists(assets_dir):
+                asset_files = os.listdir(assets_dir)
+                if asset_files:
+                    asset_res = self.client.get(f"/assets/{asset_files[0]}")
+                    self.assertEqual(asset_res.status_code, 200)
+
+    def test_15_api_404_not_intercepted_by_spa(self):
+        """Ensure missing API routes return 404 JSON, never falling back to index.html."""
+        res = self.client.get("/api/nonexistent-route")
+        self.assertEqual(res.status_code, 404)
+        data = res.json()
+        self.assertIn("detail", data)
+        self.assertIn("API route not found", data["detail"])
 
 
 if __name__ == "__main__":

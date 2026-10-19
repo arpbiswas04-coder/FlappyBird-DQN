@@ -25,6 +25,7 @@ frontend/.vite/
 # Temporary / Editor
 *.swp
 *.bak
+*.tmp
 .vscode/
 .idea/
 

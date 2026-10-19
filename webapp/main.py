@@ -153,13 +153,63 @@ async def websocket_session_endpoint(websocket: WebSocket):
 
 import os
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIST = os.path.join(PROJECT_ROOT, "frontend", "dist")
+
 if os.path.exists(FRONTEND_DIST):
-    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
+    # Mount the /assets static bundle directory
+    assets_dir = os.path.join(FRONTEND_DIST, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+
+@app.get("/", include_in_schema=False)
+async def serve_root():
+    """Serve frontend index.html if available, or informative JSON message."""
+    if os.path.exists(FRONTEND_DIST):
+        index_file = os.path.join(FRONTEND_DIST, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+    return JSONResponse(
+        content={
+            "message": "Flappy Bird DQN API running. Build frontend with 'npm run build' to view dashboard.",
+            "health": "/api/health",
+            "model_status": "/api/model-status",
+            "docs": "/docs",
+        }
+    )
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa_fallback(full_path: str):
+    """
+    Production SPA fallback route:
+    - Never intercepts API routes (starts with /api/ or api)
+    - Never intercepts WebSocket routes (starts with /ws/ or ws)
+    - Serves static files directly if present in FRONTEND_DIST (e.g., favicon.ico, vite.svg)
+    - Serves index.html for all client-side navigation routes
+    """
+    if full_path == "api" or full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="API route not found")
+    if full_path == "ws" or full_path.startswith("ws/"):
+        raise HTTPException(status_code=404, detail="WebSocket path not found")
+
+    if os.path.exists(FRONTEND_DIST):
+        target_file = os.path.join(FRONTEND_DIST, full_path)
+        if full_path and os.path.isfile(target_file):
+            return FileResponse(target_file)
+
+        index_file = os.path.join(FRONTEND_DIST, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+
+    raise HTTPException(status_code=404, detail="Resource not found")
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("webapp.main:app", host="127.0.0.1", port=8000, reload=False)
+    port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST", "0.0.0.0")
+    uvicorn.run("webapp.main:app", host=host, port=port, reload=False)
