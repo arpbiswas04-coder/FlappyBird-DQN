@@ -26,6 +26,7 @@ frontend/.vite/
 *.swp
 *.bak
 *.tmp
+*.zip
 .vscode/
 .idea/
 

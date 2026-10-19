@@ -147,7 +147,7 @@ If creating a Web Service manually in the Render Dashboard:
      uvicorn webapp.main:app --host 0.0.0.0 --port $PORT
      ```
 4. Under **Environment Variables**, add:
-   - `MODEL_URL`: `https://.../flappybirdv0.pt` (Direct HTTPS link to checkpoint)
+   - `MODEL_URL`: `https://github.com/arpbiswas04-coder/FlappyBird-DQN/releases/download/v1.0.0/flappybird-model.zip`
    - `PYTHON_VERSION`: `3.10.12`
    - `SDL_VIDEODRIVER`: `dummy`
 5. Click **Deploy Web Service**.
@@ -158,21 +158,17 @@ If creating a Web Service manually in the Render Dashboard:
 
 Because pre-trained model files (`runs/*.pt`) are gitignored to keep the repository lightweight, cloud deployments need a source to fetch the checkpoint on first boot.
 
-### How to Host on GitHub Releases (Free & Fast):
-1. Navigate to your repository: `https://github.com/arpbiswas04-coder/FlappyBird-DQN`.
-2. Click **Releases** -> **Draft a new release**.
-3. Tag version: `v1.0.0`, Title: `Flappy Bird DQN Checkpoint v1.0.0`.
-4. Attach `runs/flappybirdv0.pt` into the binary upload box.
-5. Publish release.
-6. Right-click the attached `flappybirdv0.pt` file and select **Copy link address**.
-   - Example URL: `https://github.com/arpbiswas04-coder/FlappyBird-DQN/releases/download/v1.0.0/flappybirdv0.pt`
-7. Paste this URL into Render as the `MODEL_URL` environment variable.
+### Release Asset:
+The checkpoint is packaged and hosted as a ZIP asset:
+- **Download URL**: `https://github.com/arpbiswas04-coder/FlappyBird-DQN/releases/download/v1.0.0/flappybird-model.zip`
+- Contains: `flappybirdv0.pt`
 
 ### How `MODEL_URL` Works:
 - **Server-Side Security**: The backend never accepts download URLs from client requests; it only reads the server-configured `MODEL_URL`.
-- **Atomic File Download**: The file is streamed into a `.tmp` file in the `runs/` directory with a 60-second timeout.
-- **Integrity Validation**: Verifies that the downloaded file is non-empty and meets size requirements.
-- **Zero Partial Files**: If download fails or is interrupted, temporary files are cleanly removed without touching existing checkpoints.
+- **ZIP & Raw Support**: Automatically detects whether the payload is a `.zip` archive or raw `.pt` checkpoint.
+- **Safe Extraction**: When extracting from a ZIP archive, the loader extracts only the matching checkpoint (`flappybirdv0.pt`) directly into a secure temporary file in `runs/`, preventing path traversal (Zip Slip).
+- **Atomic Installation**: Verifies that the extracted file is non-empty and meets size requirements before atomically replacing `runs/flappybirdv0.pt`.
+- **Zero Partial Files**: If download or extraction fails, temporary files are cleanly removed without touching existing checkpoints.
 
 ---
 

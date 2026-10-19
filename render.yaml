@@ -11,4 +11,4 @@ services:
       - key: SDL_VIDEODRIVER
         value: "dummy"
       - key: MODEL_URL
-        sync: false
+        value: "https://github.com/arpbiswas04-coder/FlappyBird-DQN/releases/download/v1.0.0/flappybird-model.zip"

@@ -1,6 +1,8 @@
 import os
 import sys
 import unittest
+import io
+import zipfile
 from unittest.mock import patch, MagicMock
 import numpy as np
 import torch
@@ -280,6 +282,150 @@ class TestBackend(unittest.TestCase):
         data = res.json()
         self.assertIn("detail", data)
         self.assertIn("API route not found", data["detail"])
+
+    def test_16_model_download_zip_archive_success(self):
+        """Verify ZIP archive is downloaded, safely extracted, and checkpoint installed."""
+        test_path = os.path.join(PROJECT_ROOT, "runs", "test_zip_extracted.pt")
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+        fake_model_data = b"ZIP_MODEL_WEIGHTS_CONTENT" * 100  # > 1024 bytes
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("test_zip_extracted.pt", fake_model_data)
+        zip_bytes = zip_buf.getvalue()
+
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.read.side_effect = [zip_bytes, b""]
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            success, msg = download_model_checkpoint(
+                test_path,
+                model_url="https://github.com/arpbiswas04-coder/FlappyBird-DQN/releases/download/v1.0.0/flappybird-model.zip",
+                min_size_bytes=100
+            )
+            self.assertTrue(success, f"Expected success but got: {msg}")
+            self.assertIn("Successfully downloaded and extracted", msg)
+            self.assertTrue(os.path.exists(test_path))
+            with open(test_path, "rb") as f:
+                self.assertEqual(f.read(), fake_model_data)
+
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+    def test_17_model_download_zip_nested_path_safe_extraction(self):
+        """Verify nested paths in ZIP archive extract safely to the target path without traversal."""
+        test_path = os.path.join(PROJECT_ROOT, "runs", "test_nested.pt")
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+        fake_model_data = b"NESTED_ZIP_MODEL_DATA" * 100
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, "w") as zf:
+            # Nested member in archive
+            zf.writestr("deeply/nested/folder/test_nested.pt", fake_model_data)
+        zip_bytes = zip_buf.getvalue()
+
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.read.side_effect = [zip_bytes, b""]
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            success, msg = download_model_checkpoint(
+                test_path,
+                model_url="https://example.com/models.zip",
+                min_size_bytes=100
+            )
+            self.assertTrue(success)
+            self.assertTrue(os.path.exists(test_path))
+            with open(test_path, "rb") as f:
+                self.assertEqual(f.read(), fake_model_data)
+
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+    def test_18_model_download_zip_missing_checkpoint_file(self):
+        """Verify ZIP archive missing the target checkpoint fails with a clear message."""
+        test_path = os.path.join(PROJECT_ROOT, "runs", "flappybirdv0.pt_test_missing")
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, "w") as zf:
+            zf.writestr("wrong_model_name.pt", b"SOME_DATA" * 100)
+        zip_bytes = zip_buf.getvalue()
+
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.read.side_effect = [zip_bytes, b""]
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            success, msg = download_model_checkpoint(
+                test_path,
+                model_url="https://example.com/models.zip",
+                min_size_bytes=100
+            )
+            self.assertFalse(success)
+            self.assertIn("not found in ZIP archive", msg)
+            self.assertFalse(os.path.exists(test_path))
+
+    def test_19_model_download_zip_corrupted(self):
+        """Verify corrupted ZIP archive download reports error clearly and leaves no partial files."""
+        test_path = os.path.join(PROJECT_ROOT, "runs", "test_corrupt.pt")
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+        corrupt_bytes = b"NOT_A_VALID_ZIP_FILE_DATA" * 50
+
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.read.side_effect = [corrupt_bytes, b""]
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            success, msg = download_model_checkpoint(
+                test_path,
+                model_url="https://example.com/models.zip",
+                min_size_bytes=100
+            )
+            self.assertFalse(success)
+            self.assertIn("not a valid ZIP archive", msg)
+            self.assertFalse(os.path.exists(test_path))
+
+    def test_20_model_download_zip_empty_checkpoint(self):
+        """Verify ZIP archive containing empty checkpoint file is rejected."""
+        test_path = os.path.join(PROJECT_ROOT, "runs", "test_empty_in_zip.pt")
+        if os.path.exists(test_path):
+            os.remove(test_path)
+
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, "w") as zf:
+            zf.writestr("test_empty_in_zip.pt", b"")
+        zip_bytes = zip_buf.getvalue()
+
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.read.side_effect = [zip_bytes, b""]
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+
+        with patch("urllib.request.urlopen", return_value=mock_response):
+            success, msg = download_model_checkpoint(
+                test_path,
+                model_url="https://example.com/models.zip",
+                min_size_bytes=100
+            )
+            self.assertFalse(success)
+            self.assertIn("too small", msg)
+            self.assertFalse(os.path.exists(test_path))
 
 
 if __name__ == "__main__":
