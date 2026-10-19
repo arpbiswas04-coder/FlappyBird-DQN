@@ -1,0 +1,857 @@
+/* ==========================================================================
+   NEO-BRUTALIST DASHBOARD STYLESHEET
+   Flappy Bird AI · Machine Learning Reinforcement Learning Dashboard
+   ========================================================================== */
+
+/* Main Layout */
+.brutal-app-layout {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
+}
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+.brutal-header {
+  height: 72px;
+  background-color: var(--bg-card);
+  border-bottom: var(--border-extra);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 0px rgba(0, 0, 0, 0.05);
+}
+
+.brutal-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon-box {
+  width: 44px;
+  height: 44px;
+  background-color: var(--accent-yellow);
+  border: var(--border-thick);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.brand-title-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.brand-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+/* Header Controls & Speed Selector */
+.brutal-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.speed-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-main);
+  border: var(--border-thick);
+  border-radius: var(--radius-md);
+  padding: 4px 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.speed-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+}
+
+.speed-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.speed-btn {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1.5px solid var(--color-border);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  transition: all 0.1s ease;
+}
+
+.speed-btn:hover {
+  background-color: var(--tint-yellow);
+  transform: none;
+}
+
+.speed-btn-active {
+  background-color: var(--accent-yellow) !important;
+  color: var(--text-primary);
+  font-weight: 800;
+  box-shadow: 1.5px 1.5px 0px #171717;
+}
+
+/* Action Buttons */
+.action-button-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brutal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  padding: 7px 16px;
+  border-radius: var(--radius-md);
+  letter-spacing: -0.01em;
+}
+
+.btn-start {
+  background-color: var(--accent-yellow);
+  color: var(--text-primary);
+}
+
+.btn-start:hover:not(:disabled) {
+  background-color: #ffd026;
+}
+
+.btn-pause {
+  background-color: var(--accent-yellow);
+  color: var(--text-primary);
+}
+
+.btn-resume {
+  background-color: var(--accent-green);
+  color: var(--text-primary);
+}
+
+.btn-reset {
+  background-color: var(--accent-purple);
+  color: var(--text-primary);
+}
+
+.btn-reset:hover:not(:disabled) {
+  background-color: #a788ff;
+}
+
+.btn-stop {
+  background-color: var(--accent-coral);
+  color: var(--text-primary);
+}
+
+.btn-stop:hover:not(:disabled) {
+  background-color: #ff5242;
+}
+
+/* Status Indicator Dot (ONLY a green dot, no text or pill container) */
+.brutal-status-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  margin-left: 4px;
+}
+
+.dot-connected {
+  background-color: var(--status-running);
+  box-shadow: 0 0 6px rgba(72, 213, 151, 0.7);
+  animation: brutalPulse 2s infinite ease-in-out;
+}
+
+.dot-disconnected {
+  background-color: var(--status-error);
+}
+
+@keyframes brutalPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard Body & Grid
+   -------------------------------------------------------------------------- */
+.brutal-dashboard-body {
+  flex: 1;
+  padding: 24px 28px;
+  max-width: 1540px;
+  margin: 0 auto;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.brutal-main-grid {
+  display: grid;
+  grid-template-columns: 350px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Left Column: Game Panel (Portrait Native Orientation)
+   -------------------------------------------------------------------------- */
+.column-game {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.brutal-game-card {
+  background-color: var(--bg-card);
+  border: var(--border-extra);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.game-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.game-card-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.game-viewport-frame {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.game-screen-portrait {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 288 / 512;
+  max-width: 314px;
+  background-color: #4ec0ca; /* Flappy Bird classic sky background */
+  border: var(--border-thick);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.game-canvas-image {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.game-empty-screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tint-cyan);
+}
+
+.empty-bird-icon {
+  width: 72px;
+  height: 72px;
+  opacity: 0.6;
+}
+
+/* In-Game Score HUD Badge */
+.brutal-hud-score {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background-color: var(--accent-yellow);
+  border: var(--border-thick);
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+  line-height: 1.1;
+  pointer-events: none;
+}
+
+.hud-score-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+}
+
+.hud-score-number {
+  font-size: 1.35rem;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+/* Overlays inside Game Screen */
+.brutal-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(23, 23, 23, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 10;
+}
+
+.brutal-modal {
+  background-color: var(--bg-card);
+  border: var(--border-extra);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow-lg);
+  max-width: 260px;
+  width: 100%;
+}
+
+.modal-badge-ready {
+  font-size: 0.7rem;
+  font-weight: 800;
+  background-color: var(--accent-yellow);
+  border: 1.5px solid var(--color-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  box-shadow: 1.5px 1.5px 0px #171717;
+}
+
+.modal-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modal-text {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.modal-cta {
+  margin-top: 6px;
+  width: 100%;
+  justify-content: center;
+  padding: 8px 14px;
+}
+
+.modal-icon-paused {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: var(--accent-yellow);
+  border: var(--border-thick);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.modal-award-icon {
+  color: #d97706;
+}
+
+/* --------------------------------------------------------------------------
+   Right Column: Metrics, Charts, Recent Episodes
+   -------------------------------------------------------------------------- */
+.column-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Statistics Grid */
+.brutal-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.brutal-stat-card {
+  border: var(--border-thick);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 98px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.brutal-stat-card:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Card Tints */
+.stat-cyan { background-color: var(--tint-cyan); }
+.stat-green { background-color: var(--tint-green); }
+.stat-yellow { background-color: var(--tint-yellow); }
+.stat-purple { background-color: var(--tint-purple); }
+.stat-coral { background-color: var(--tint-coral); }
+
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.stat-header-icon {
+  color: var(--text-primary);
+}
+
+.stat-value-box {
+  display: flex;
+  align-items: baseline;
+  margin-top: 6px;
+}
+
+.stat-number {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+/* Status Badges */
+.brutal-status-badge {
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  box-shadow: 1.5px 1.5px 0px #171717;
+  display: inline-block;
+}
+
+.status-badge-running { background-color: var(--status-running); color: #171717; }
+.status-badge-paused { background-color: var(--status-paused); color: #171717; }
+.status-badge-stopped { background-color: var(--status-stopped); color: #FFFFFF; }
+.status-badge-error { background-color: var(--status-error); color: #FFFFFF; }
+.status-badge-idle { background-color: var(--accent-yellow); color: #171717; }
+
+/* --------------------------------------------------------------------------
+   Reward Progression Chart with Real Horizontal Scrolling
+   -------------------------------------------------------------------------- */
+.brutal-chart-card {
+  background-color: var(--bg-card);
+  border: var(--border-extra);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chart-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.chart-subtitle {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.historical-badge {
+  font-size: 0.75rem;
+  background-color: var(--tint-yellow);
+  border: 1.5px solid var(--color-border);
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  box-shadow: 1.5px 1.5px 0px #171717;
+}
+
+.historical-badge strong {
+  font-family: var(--font-mono);
+}
+
+.chart-empty-box {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card-subtle);
+  padding: 20px;
+  text-align: center;
+}
+
+.empty-chart-icon {
+  color: var(--text-muted);
+}
+
+.empty-chart-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.empty-chart-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  max-width: 400px;
+}
+
+/* Two-Part Chart: Fixed Y-Axis + Horizontally Scrollable Plot Area */
+.chart-viewport-wrapper {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  border: var(--border-thick);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card-subtle);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.chart-fixed-yaxis {
+  width: 60px;
+  flex-shrink: 0;
+  border-right: 2px solid var(--color-border);
+  background-color: #F8F6F0;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+.yaxis-svg {
+  display: block;
+}
+
+.axis-tick-text {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  fill: var(--text-primary);
+}
+
+/* Horizontal Scroll Container */
+.chart-scrollable-plot {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: 0;
+  max-width: calc(100% - 60px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+  background-color: var(--bg-card);
+}
+
+.plot-svg {
+  display: block;
+}
+
+.chart-data-circle {
+  cursor: pointer;
+  transition: r 0.1s ease;
+}
+
+.chart-data-circle:hover {
+  r: 8px;
+}
+
+/* Brutalist Tooltip */
+.brutal-chart-tooltip {
+  position: absolute;
+  background-color: var(--bg-card);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.76rem;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  z-index: 30;
+  min-width: 140px;
+}
+
+.tooltip-title {
+  font-weight: 800;
+  color: var(--text-primary);
+  border-bottom: 1.5px solid var(--color-border);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+}
+
+.tooltip-row strong {
+  color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Expanded Recent Episodes Table with Real Vertical Scrolling
+   -------------------------------------------------------------------------- */
+.brutal-episodes-card {
+  background-color: var(--bg-card);
+  border: var(--border-extra);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.episodes-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.episodes-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.episodes-count-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  background-color: var(--tint-cyan);
+  border: 1.5px solid var(--color-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  box-shadow: 1.5px 1.5px 0px #171717;
+}
+
+.episodes-empty-box {
+  padding: 28px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+/* Vertical Scrolling Container */
+.episodes-scroll-container {
+  max-height: 290px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: var(--border-thick);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+  width: 100%;
+  min-width: 0;
+}
+
+.brutal-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.brutal-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--accent-yellow);
+  color: var(--text-primary);
+  font-weight: 800;
+  padding: 9px 14px;
+  border-bottom: 2px solid var(--color-border);
+  z-index: 5;
+  letter-spacing: 0.02em;
+}
+
+.brutal-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1.5px solid var(--color-border);
+  color: var(--text-primary);
+}
+
+.brutal-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-row-best {
+  background-color: rgba(255, 216, 77, 0.15);
+}
+
+.brutal-score-pill {
+  background-color: var(--tint-yellow);
+  border: 1.5px solid var(--color-border);
+  padding: 2px 9px;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  font-family: var(--font-mono);
+  box-shadow: 1.5px 1.5px 0px #171717;
+}
+
+.text-positive-reward {
+  color: #059669;
+  font-weight: 700;
+}
+
+.text-negative-reward {
+  color: #e11d48;
+  font-weight: 700;
+}
+
+.text-steps {
+  color: var(--text-secondary);
+}
+
+.brutal-badge-best {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background-color: var(--accent-yellow);
+  color: var(--text-primary);
+  border: 1.5px solid var(--color-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  box-shadow: 1.5px 1.5px 0px #171717;
+}
+
+.brutal-badge-completed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Layout Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 1140px) {
+  .brutal-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .game-viewport-frame {
+    max-width: 314px;
+    margin: 0 auto;
+  }
+
+  .brutal-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .brutal-header {
+    height: auto;
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .brutal-header-controls {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .brutal-dashboard-body {
+    padding: 14px;
+  }
+
+  .brutal-metrics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

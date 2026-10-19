@@ -1,0 +1,32 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# macOS & OS system files
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+
+# Temporary / Editor
+*.swp
+*.bak
+.vscode/
+.idea/
+
+# Runs directory
+runs/
